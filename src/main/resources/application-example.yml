@@ -1,0 +1,63 @@
+# 示例配置文件
+server:
+  port: 8080
+
+spring:
+  application:
+    name: tensor-pay-example
+
+# 日志配置
+logging:
+  level:
+    com.tensor.pay: DEBUG
+    root: INFO
+
+# Tensor Pay 配置
+tensor:
+  pay:
+    # 微信支付配置
+    wechat:
+      enabled: true
+      app-id: wx1234567890abcdef  # 替换为真实的微信应用ID
+      mch-id: "1234567890"        # 替换为真实的商户号
+      private-key-path: classpath:certs/wechat/apiclient_key.pem
+      merchant-serial-number: "1234567890ABCDEF1234567890ABCDEF12345678"
+      api-v3-key: "your-api-v3-key-32-characters-long"
+      notify-url: http://localhost:8080/api/payment/wechat/notify
+      return-url: http://localhost:8080/payment/success
+      sandbox: true
+    
+    # 支付宝配置
+    alipay:
+      enabled: true
+      app-id: "2021000000000000"  # 替换为真实的支付宝应用ID
+      private-key: "MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQC..."  # 替换为真实的私钥
+      alipay-public-key: "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA..."  # 替换为真实的支付宝公钥
+      sign-type: RSA2
+      charset: UTF-8
+      format: json
+      server-url: https://openapi.alipaydev.com/gateway.do  # 沙箱环境
+      notify-url: http://localhost:8080/api/payment/alipay/notify
+      return-url: http://localhost:8080/payment/success
+      sandbox: true
+    
+    # 银行支付配置
+    bank:
+      enabled: true
+      merchant-id: "BANK123456"
+      merchant-key: "your-bank-merchant-key"
+      gateway-url: https://test-bank-gateway.example.com
+      supported-banks:
+        - ICBC  # 工商银行
+        - CCB   # 建设银行
+        - ABC   # 农业银行
+        - BOC   # 中国银行
+        - CMB   # 招商银行
+        - SPDB  # 浦发银行
+        - CIB   # 兴业银行
+        - CITIC # 中信银行
+      notify-url: http://localhost:8080/api/payment/bank/notify
+      return-url: http://localhost:8080/payment/success
+      test-mode: true
+      connect-timeout: 30000
+      read-timeout: 30000

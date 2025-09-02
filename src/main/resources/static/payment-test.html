@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tensor Pay 支付测试</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .payment-form {
+            display: grid;
+            gap: 15px;
+        }
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+        label {
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #555;
+        }
+        input, select, textarea {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: transform 0.2s;
+        }
+        button:hover {
+            transform: translateY(-2px);
+        }
+        .payment-buttons {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .wechat-btn {
+            background: linear-gradient(135deg, #09bb07 0%, #00d100 100%);
+        }
+        .alipay-btn {
+            background: linear-gradient(135deg, #1677ff 0%, #69c0ff 100%);
+        }
+        .bank-btn {
+            background: linear-gradient(135deg, #ff4d4f 0%, #ff7875 100%);
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 5px;
+            display: none;
+        }
+        .success {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .error {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .qr-code {
+            text-align: center;
+            margin: 20px 0;
+        }
+        .qr-code img {
+            max-width: 200px;
+            border: 1px solid #ddd;
+            padding: 10px;
+            background: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 Tensor Pay 支付测试</h1>
+        
+        <form class="payment-form" id="paymentForm">
+            <div class="form-group">
+                <label for="outTradeNo">商户订单号:</label>
+                <input type="text" id="outTradeNo" name="outTradeNo" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="amount">支付金额 (元):</label>
+                <input type="number" id="amount" name="amount" step="0.01" min="0.01" value="0.01" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="subject">商品名称:</label>
+                <input type="text" id="subject" name="subject" value="测试商品" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="body">商品描述:</label>
+                <textarea id="body" name="body" rows="3">这是一个测试商品的详细描述</textarea>
+            </div>
+            
+            <div class="payment-buttons">
+                <button type="button" class="wechat-btn" onclick="createPayment('wechat')">
+                    💚 微信支付
+                </button>
+                <button type="button" class="alipay-btn" onclick="createPayment('alipay')">
+                    💙 支付宝支付
+                </button>
+                <button type="button" class="bank-btn" onclick="createPayment('bank')">
+                    🏦 银行支付
+                </button>
+            </div>
+        </form>
+        
+        <div id="result" class="result">
+            <h3>支付结果:</h3>
+            <pre id="resultContent"></pre>
+            <div id="qrCode" class="qr-code" style="display: none;">
+                <p>请使用手机扫描二维码完成支付:</p>
+                <div id="qrCodeContainer"></div>
+            </div>
+        </div>
+        
+        <div style="margin-top: 30px;">
+            <h3>🔍 查询功能测试</h3>
+            <div style="display: flex; gap: 10px; align-items: end;">
+                <div class="form-group" style="flex: 1;">
+                    <label for="queryOrderNo">订单号:</label>
+                    <input type="text" id="queryOrderNo" placeholder="输入要查询的订单号">
+                </div>
+                <div class="form-group">
+                    <label for="queryType">支付类型:</label>
+                    <select id="queryType">
+                        <option value="wechat">微信支付</option>
+                        <option value="alipay">支付宝支付</option>
+                        <option value="bank">银行支付</option>
+                    </select>
+                </div>
+                <button type="button" onclick="queryPayment()">查询状态</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 生成订单号
+        document.getElementById('outTradeNo').value = 'TEST_' + Date.now();
+        
+        // 创建支付
+        async function createPayment(paymentType) {
+            const form = document.getElementById('paymentForm');
+            const formData = new FormData(form);
+            
+            const request = {
+                outTradeNo: formData.get('outTradeNo'),
+                paymentType: paymentType.toUpperCase(),
+                amount: parseFloat(formData.get('amount')),
+                subject: formData.get('subject'),
+                body: formData.get('body'),
+                notifyUrl: `${window.location.origin}/api/payment/${paymentType}/notify`,
+                returnUrl: `${window.location.origin}/payment/success`
+            };
+            
+            try {
+                const response = await fetch('/api/payment/create', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(request)
+                });
+                
+                const result = await response.json();
+                showResult(result, true);
+                
+                // 如果有支付URL，显示二维码
+                if (result.payUrl) {
+                    showQRCode(result.payUrl);
+                }
+                
+            } catch (error) {
+                showResult({success: false, errorMessage: error.message}, false);
+            }
+        }
+        
+        // 查询支付状态
+        async function queryPayment() {
+            const orderNo = document.getElementById('queryOrderNo').value;
+            const paymentType = document.getElementById('queryType').value;
+            
+            if (!orderNo) {
+                alert('请输入订单号');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/payment/query?paymentType=${paymentType.toUpperCase()}&outTradeNo=${orderNo}`);
+                const result = await response.json();
+                showResult(result, result.success);
+                
+            } catch (error) {
+                showResult({success: false, errorMessage: error.message}, false);
+            }
+        }
+        
+        // 显示结果
+        function showResult(result, isSuccess) {
+            const resultDiv = document.getElementById('result');
+            const resultContent = document.getElementById('resultContent');
+            
+            resultDiv.className = 'result ' + (isSuccess ? 'success' : 'error');
+            resultContent.textContent = JSON.stringify(result, null, 2);
+            resultDiv.style.display = 'block';
+            
+            // 隐藏二维码
+            document.getElementById('qrCode').style.display = 'none';
+        }
+        
+        // 显示二维码
+        function showQRCode(url) {
+            const qrCodeDiv = document.getElementById('qrCode');
+            const container = document.getElementById('qrCodeContainer');
+            
+            // 使用第三方二维码生成服务
+            const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(url)}`;
+            container.innerHTML = `<img src="${qrCodeUrl}" alt="支付二维码">`;
+            
+            qrCodeDiv.style.display = 'block';
+        }
+        
+        // 页面加载时获取支持的支付类型
+        window.onload = async function() {
+            try {
+                const response = await fetch('/api/payment/types');
+                const types = await response.json();
+                console.log('支持的支付类型:', types);
+            } catch (error) {
+                console.error('获取支付类型失败:', error);
+            }
+        };
+    </script>
+</body>
+</html>

@@ -1,0 +1,46 @@
+# Tensor Pay 配置示例
+tensor:
+  pay:
+    # 微信支付配置
+    wechat:
+      enabled: false
+      app-id: your-wechat-app-id
+      mch-id: your-merchant-id
+      private-key-path: classpath:wechat/apiclient_key.pem
+      merchant-serial-number: your-merchant-serial-number
+      api-v3-key: your-api-v3-key
+      notify-url: https://your-domain.com/api/payment/wechat/notify
+      return-url: https://your-domain.com/payment/success
+      sandbox: false
+    
+    # 支付宝配置
+    alipay:
+      enabled: false
+      app-id: your-alipay-app-id
+      private-key: your-alipay-private-key
+      alipay-public-key: your-alipay-public-key
+      sign-type: RSA2
+      charset: UTF-8
+      format: json
+      server-url: https://openapi.alipay.com/gateway.do
+      notify-url: https://your-domain.com/api/payment/alipay/notify
+      return-url: https://your-domain.com/payment/success
+      sandbox: false
+    
+    # 银行支付配置
+    bank:
+      enabled: false
+      merchant-id: your-bank-merchant-id
+      merchant-key: your-bank-merchant-key
+      gateway-url: https://bank-gateway.example.com
+      supported-banks:
+        - ICBC  # 工商银行
+        - CCB   # 建设银行
+        - ABC   # 农业银行
+        - BOC   # 中国银行
+        - CMB   # 招商银行
+      notify-url: https://your-domain.com/api/payment/bank/notify
+      return-url: https://your-domain.com/payment/success
+      test-mode: false
+      connect-timeout: 30000
+      read-timeout: 30000
